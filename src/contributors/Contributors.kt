@@ -8,6 +8,7 @@ import tasks.*
 import java.awt.event.ActionListener
 import javax.swing.SwingUtilities
 import kotlin.coroutines.CoroutineContext
+import kotlin.system.*
 
 enum class Variant {
     BLOCKING,         // Request1Blocking
@@ -38,7 +39,7 @@ interface Contributors: CoroutineScope {
         addOnWindowClosingListener {
             job.cancel()
             saveParams()
-            System.exit(0)
+            exitProcess(0)
         }
 
         // Load stored params (user & password values)
@@ -79,9 +80,11 @@ interface Contributors: CoroutineScope {
                 }.setUpCancellation()
             }
             CONCURRENT -> { // Performing requests concurrently
-                launch {
+                launch(Dispatchers.Default) {
                     val users = loadContributorsConcurrent(service, req)
-                    updateResults(users, startTime)
+                    withContext(Dispatchers.Main) {
+                        updateResults(users, startTime)
+                    }
                 }.setUpCancellation()
             }
             NOT_CANCELLABLE -> { // Performing requests in a non-cancellable way
